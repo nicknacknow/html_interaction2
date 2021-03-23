@@ -56,9 +56,12 @@ struct Element { // add Element:parse
 	const char* content;
 	int start[2], end[2]{};
 	bool isempty; // https://developer.mozilla.org/en-US/docs/Glossary/Empty_element
+	bool finished; // for parsing
 
 	const char* attribute_string;
 	std::vector<Attribute> attributes;
+
+	std::vector<Element> children;
 };
 
 struct write_config {
@@ -103,6 +106,8 @@ private:
 
 class ParseElement {
 public:
+	ParseElement();
+
 	bool step(const char* content, int pos);
 
 	Element* poststep();
@@ -114,7 +119,6 @@ public:
 private:
 	Element* current_element = new Element;
 	write_config* attribute_cfg = new write_config(STRING_TYPE, true);
-	bool element_finished;
 };
 
 class Body {

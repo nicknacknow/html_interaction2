@@ -142,18 +142,21 @@ bool ParseString::enabled() {
 
 // class ParseElement
 
+ParseElement::ParseElement() {
+
+}
+
 bool ParseElement::step(const char* content, int pos) {
 	char c = content[pos];
 
 	if (eq_char(c, OPEN_TAG) && !eq_char(content[pos + 1], EXCLAM)) { // begin element
 		this->current_element = new Element(content, pos); // pos will now be the space
-		//printf("%c %c\n", content[pos - 1], content[pos + 1]);
 
 		write_config* atr_cfg = this->parse(content, pos); // this->attribute_cfg
 
 		printf("attributecontent: %s\n", psvalue(atr_cfg));
 
-		this->element_finished = false;
+		this->get_element()->finished = true;
 		return true;
 	}
 	
@@ -163,7 +166,7 @@ bool ParseElement::step(const char* content, int pos) {
 
 		printf(" end tag\n");
 
-		this->element_finished = true;
+		this->get_element()->finished = true;
 		return true;
 	}
 
@@ -187,6 +190,7 @@ void ParseElement::reset_element() {
 
 write_config* ParseElement::parse(const char* content, int pos) {
 	ParseString parse_string{};
+	this->attribute_cfg = new write_config(STRING_TYPE, true);
 
 	for (int i = pos; i < strlen(content); i++) {
 		char c = content[i];
@@ -199,17 +203,17 @@ write_config* ParseElement::parse(const char* content, int pos) {
 		}
 
 		if (!parse_string.enabled()) {
-			printf("lolo: %c\n", content[i]);
 			if (this->step(content, i)) { // (this means current char is opening of element) check func for step if element just ended, and whether or not to continue parse content. stop writing chars and ez
-				printf("ParseElement->element_finished: %s\n", this->element_finished ? "true" : "false");
+				printf("ParseElement->element_finished: %s\n", this->get_element()->finished ? "true" : "false");
 
-				if (this->element_finished) {
+				if (this->get_element()->finished) {
 					this->get_element()->start[1] = i;
 					
 				}
 				else {
 					attribute_cfg->appendstring(psvalue(attribute_cfg));
 				}
+				continue;
 			}
 
 			attribute_cfg->appendchar(c);
@@ -247,10 +251,10 @@ void Body::parseBody() {
  	for (int i = 0; i < strlen(content); i++) {
 		char c = content[i];
 
-		if (!parse_string.enabled() && parse_element.step(content, i)) {
+		if (!parse_string.enabled() && (parse_element.step(content, i) && parse_element.get_element()->finished)) { // fix up here
 			Element* e = parse_element.poststep();
 			
-			printf("new element: %s\n", e->tag);
+			printf("new element (%c): %s\n", c, e->tag);
 		}
 
 		if (parse_string.step(content, i)) {
