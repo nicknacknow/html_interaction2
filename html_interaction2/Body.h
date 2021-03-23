@@ -1,7 +1,6 @@
 #pragma once
 #include <Windows.h>
 #include <vector>
-#include <string>
 
 #define cast(val, type) (reinterpret_cast<type>(val))
 
@@ -114,6 +113,8 @@ public:
 	write_config* parse(const char* content, int pos);
 private:
 	Element* current_element = new Element;
+	write_config* attribute_cfg = new write_config(STRING_TYPE, true);
+	bool element_finished;
 };
 
 class Body {

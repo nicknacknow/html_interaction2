@@ -7,7 +7,7 @@ Element::Element(const char* content, int& pos) {
 	if (!eq_char(content[pos], OPEN_TAG)) throw("Incorrect Element Position"); this->start[0] = pos++;
 	
 	static auto get_tag = [](const char* content, int pos) { // lambda function just to make code look tidier- name definition
-		return util::read_til_char(content, pos, ' ');
+		return util::read_til_char(content, pos, " >");
 	};
 
 	static auto get_empty = [](const char* tag) {
@@ -149,10 +149,11 @@ bool ParseElement::step(const char* content, int pos) {
 		this->current_element = new Element(content, pos); // pos will now be the space
 		//printf("%c %c\n", content[pos - 1], content[pos + 1]);
 
-		write_config* atr_cfg = this->parse(content, pos);
+		write_config* atr_cfg = this->parse(content, pos); // this->attribute_cfg
 
-		printf("%s\n", psvalue(atr_cfg));
+		printf("attributecontent: %s\n", psvalue(atr_cfg));
 
+		this->element_finished = false;
 		return true;
 	}
 	
@@ -160,6 +161,9 @@ bool ParseElement::step(const char* content, int pos) {
 		// enable bool for below func
 		// check func to see if rlly is end of func
 
+		printf(" end tag\n");
+
+		this->element_finished = true;
 		return true;
 	}
 
@@ -182,20 +186,32 @@ void ParseElement::reset_element() {
 }
 
 write_config* ParseElement::parse(const char* content, int pos) {
-	write_config* attribute_cfg = new write_config(STRING_TYPE, true);
 	ParseString parse_string{};
 
 	for (int i = pos; i < strlen(content); i++) {
 		char c = content[i];
 
-		if (parse_string.step(content, i)) {
+		if (parse_string.step(content, i)) { // if its in a string
 			attribute_cfg->appendchar(pcvalue(parse_string.get_char()));
 			attribute_cfg->appendstring(psvalue(parse_string.poststep()));
 			attribute_cfg->appendchar(pcvalue(parse_string.get_char()));
 			continue;
 		}
 
-		if ((!parse_string.enabled() && this->step(content, i)) || !parse_string.enabled()) { // check func for step if element just ended, and whether or not to continue parse content. stop writing chars and ez
+		if (!parse_string.enabled()) {
+			printf("lolo: %c\n", content[i]);
+			if (this->step(content, i)) { // (this means current char is opening of element) check func for step if element just ended, and whether or not to continue parse content. stop writing chars and ez
+				printf("ParseElement->element_finished: %s\n", this->element_finished ? "true" : "false");
+
+				if (this->element_finished) {
+					this->get_element()->start[1] = i;
+					
+				}
+				else {
+					attribute_cfg->appendstring(psvalue(attribute_cfg));
+				}
+			}
+
 			attribute_cfg->appendchar(c);
 		}
 	}

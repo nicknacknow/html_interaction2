@@ -30,6 +30,25 @@ char* util::read_til_char(const char* content, int pos, char _c) {
 	return n;
 }
 
+char* util::read_til_char(const char* content, int pos, const char* _c) {
+	char* n = (char*)"";
+
+	for (int i = pos; i < strlen(content); i++) {
+		char c = content[i];
+
+		for (int i = 0; i < strlen(_c); i++)
+			if (eq_char(c, _c[i])) { strcat(n, "\x0"); return n; }
+
+		int len = strlen(n);
+		char* l = new char[len + 1];
+		strcpy(l, n);
+		l[len] = c;
+		l[len + 1] = '\x0';
+		n = l;
+	}
+	return n;
+}
+
 int util::find_next_char(const char* content, int pos, char c) {
 	for (int i = pos; i < strlen(content); i++) {
 		if (eq_char(content[pos], c)) return i;
